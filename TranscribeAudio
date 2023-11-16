@@ -1,0 +1,112 @@
+from transformers import WhisperProcessor, WhisperForConditionalGeneration
+from transformers import pipeline
+import torch
+import librosa
+import noisereduce as nr
+import os
+import tempfile
+import soundfile as sf
+
+
+class Transcribe:
+
+
+
+    def __init__(self, model_path: str):
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.check_gpu()
+        try:
+            self.transcription_pipe = pipeline(
+                "automatic-speech-recognition",
+                model=model_path,
+                chunk_length_s=30,
+                device=self.device,
+            )
+        except Exception as e:
+            print(f"An error occurred while initializing the transcription model: {e}")
+            self.transcription_pipe = None
+
+    def check_gpu(self):
+        if torch.cuda.is_available():
+            print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+        else:
+            print("No GPU available, using CPU.")
+
+    def preprocess_audio(self, file_path, target_sr=16000, amplification_factor=1.5):
+        try:
+            # Chargement de l'audio
+            audio, sr = librosa.load(file_path, sr=None)
+
+            # Resampling
+            if sr != target_sr:
+                audio = librosa.resample(y=audio, orig_sr=sr, target_sr=target_sr)
+
+            # Amplification de l'audio
+            amplified_audio = audio * amplification_factor
+
+            # Réduction du bruit
+            reduced_noise_audio = nr.reduce_noise(y=amplified_audio, sr=target_sr)
+
+            return reduced_noise_audio
+        except Exception as e:
+            print(f"An error occurred during audio preprocessing: {e}")
+            return None
+        
+
+
+        except Exception as e:
+            print(f"An error occurred during audio preprocessing: {e}")
+            return None
+
+
+    def export_to_text(self, transcription_text, output_file_path):
+        try:
+            with open(output_file_path, "w", encoding="utf-8") as output_file:
+                output_file.write(transcription_text)
+            print(f"Transcription exported to {output_file_path}")
+        except Exception as e:
+            print(f"An error occurred while exporting the transcription: {e}")
+
+    def transcribe(self, audio_file_path):
+        try:
+            print("Preprocessing audio...")
+            preprocessed_audio = self.preprocess_audio(audio_file_path)
+            if preprocessed_audio is None:
+                print("Preprocessing failed. Transcription cannot proceed.")
+                return None
+
+            # Écrire l'audio prétraité dans un fichier temporaire
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                sf.write(tmp_file.name, preprocessed_audio, 16000)
+                tmp_file.close()  # Important de fermer le fichier avant de l'utiliser dans le pipeline
+
+                print("Starting transcription...")
+                transcription_results = self.transcription_pipe(
+                    tmp_file.name,  # Utiliser le fichier temporaire
+                    chunk_length_s=30,
+                    generate_kwargs={"task": "transcribe", "language": "french"}
+                )
+
+                # Suppression du fichier temporaire
+                os.remove(tmp_file.name)
+
+                # Vérifier si la clé 'text' est dans les résultats et procéder au traitement
+                if 'text' in transcription_results:
+                    transcription_text = transcription_results['text']
+                    print("Transcription complete. Processing the text output...")
+                else:
+                    print("The expected 'text' key is not in the transcription results.")
+                    transcription_text = None
+
+                return transcription_text
+        
+
+        except Exception as e:
+            print(f"An error occurred during transcription: {e}")
+            return None
+
+
+
+
+
+
