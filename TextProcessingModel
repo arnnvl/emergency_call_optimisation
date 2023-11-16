@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+import re
+import string
+import spacy
+
+
+class TextProcessingModel:
+    def __init__(self):
+        # Chargement du modèle de langue français pour spacy
+        self.nlp = spacy.load("fr_core_news_sm")
+           
+    
+    """def __init__(self, use_pretrained=True, model_name='bert-base-uncased'):
+        # Initialisation de la classe avec la possibilité de choisir un modèle pré-entraîné ou non
+        self.use_pretrained = use_pretrained
+        self.model_name = model_name
+        self.tokenizer = None
+        self.model = None
+        if self.use_pretrained:
+            self.load_pretrained_model()
+
+        def load_pretrained_model(self):
+        # Chargement du modèle pré-entraîné et du tokenizer associé
+        from transformers import AutoModelForTokenClassification, AutoTokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModelForTokenClassification.from_pretrained(self.model_name)
+
+        ### trouver et tester d'autres modèles nlp (scpay, hugging face etc...) #https://huggingface.co/google/flan-t5-xxl modèle flan T5 google
+
+    def tokenize_text(self, text):
+        # Tokenisation du texte
+        return self.tokenizer.tokenize(text)"""
+
+
+    def normalize_text(self, text):
+        # Normalisation du texte
+        text = text.lower()
+        text = re.sub(r'[' + string.punctuation + ']', ' ', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        lst_text = text.split()
+        return lst_text
+
+
+    def clean_text(self, text):
+        pass
+        # Nettoyage du texte (dépend du modèle)
+
+
+    def preprocess_text(self, text):
+        pass
+        # Fonction globale pour le prétraitement du texte
+
+    def get_name_from_text(self, text_or_list):
+        if isinstance(text_or_list, list):
+            text_or_list = ' '.join(text_or_list)
+        doc = self.nlp(text_or_list)
+        names = [ent.text for ent in doc.ents if ent.label_ == "PER"]
+        return names
+
+
+
