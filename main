@@ -1,0 +1,38 @@
+"""
+Created on Mon Nov  6 10:37:32 2023
+
+@author: Laura
+"""
+import os
+import sys
+# Dans un notebook Jupyter, utilisez ceci pour obtenir le chemin du répertoire courant:
+current_script_path = os.getcwd()
+
+# Ajoutez le répertoire parent de `modules` au sys.path
+parent_dir = os.path.dirname(current_script_path)
+modules_dir = os.path.join(parent_dir, 'modules')
+sys.path.append(modules_dir)
+
+os.chdir(r"C:\Users\Hadji\Desktop\PI²\PI²")
+print(os.getcwd())
+
+from modules.Transcribe import *
+#from modules.TextProcessingModel import *
+
+
+
+
+def main(audio_path):
+    chemin_dossier_parent = os.path.dirname(os.getcwd())
+    chemin_dossier_modele = os.path.join(chemin_dossier_parent, 'modelewhisper')
+    transcriber = Transcribe(chemin_dossier_modele)
+    text = transcriber.transcribe(audio_path)
+    print(text)
+    
+
+
+if __name__ == "__main__":
+    main(r"C:\Users\Hadji\Downloads\Théâtre du Parc Bruxelles 2012  Les Misérables- extrait Cosette.wav")
+
+
+
